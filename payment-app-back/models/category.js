@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 const ProviderSchema = require('./provider');
 
 const categorySchema = new Schema({
+    id: Schema.Types.ObjectId,
     name: {
         type: String,
         required: true

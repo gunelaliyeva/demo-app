@@ -1,22 +1,63 @@
 const express = require('express');
 
 const Category = require('../models/category');
-const CustomField = require('../models/field');
+const Receipt = require('../models/receipt');
 const Provider = require('../models/provider');
 
-const errorRes = (code) => {
-    return {
+const validationErrorTemp = {name: "ValidationError"};
+const date = new Date();
+
+const errorRes = (res, err) => {
+    let statusCode, code;
+    if (err.name === "ValidationError") {
+        code = 2;
+        statusCode = 400;
+    } else {
+        code = 1;
+        statusCode = 500;
+    }
+    res.status(statusCode).json({
         error: {
             code: code,
             message: code === 1 ? "Service is temporarily unavailable" : "Required parameter is missing"
         }
-    };
+    });
+}
+
+const validateAmount = (amount, res) => {
+    const {value, currency} = amount;
+    const numVal = Number(value);
+    if (isNaN(value) || numVal < 1 || numVal > 5000) errorRes(res, validationErrorTemp);
+}
+
+const validateProvider = async (pId, res) => {
+    try {
+        const provider = await Provider.findById(pId);
+        if(!provider) errorRes(res, validationErrorTemp);
+    } catch (e) {
+        errorRes(res, validationErrorTemp);
+    }
+}
+
+const validateCardNumber = (number) => number.length !== 20 || isNaN(number);
+
+const validateExpMonth = (month) => month.length !== 2 || isNaN(month) || month < 1 || month > 12;
+
+const validateExpYear = (year) => year.length !== 2 || isNaN(year) || year > 30 || year < date.getFullYear()%100;
+
+const validateCvv = (cvv) => cvv.length !== 3 || isNaN(cvv);
+
+const validateCard = async (card, res) => {
+    const {number, exp_month, exp_year, cvv} = card;
+    if (validateCardNumber(number) || validateExpMonth(exp_month) || validateExpYear(exp_year) || validateCvv(cvv))
+        errorRes(res, validationErrorTemp);
 }
 
 exports.getPaymentCategories = async (req, res, next) => {
     try {
         const categories = await Category.find().populate({
             path: 'providers',
+            select: 'name fields',
             populate: {
                 path: 'fields',
                 populate: {path: 'options'}
@@ -24,76 +65,25 @@ exports.getPaymentCategories = async (req, res, next) => {
         });
         res.status(200).json(categories);
     } catch (e) {
-        res.json(errorRes(1));
+        errorRes(res, e);
     }
 }
 
-const sendPairRequest = (req, res) => {
-    const pair = new Pair({
-        k: req.body.k,
-        v: req.body.v
-    });
-    pair.save().then(result => {
-        res.status(201).json({
-            k: result.k,
-            v: result.v
-        });
-    }).catch(err => {
-        console.log(err);
-    })
-}
+exports.makeNewPayment = async (req, res, next) => {
+    try {
+        const {providerId, fields, amount, card} = req.body;
+        validateAmount(amount, res);
+        validateProvider(providerId, res);
+        validateCard(card, res);
 
-const senFieldRequest = (req, res) => {
-    const field = new CustomField({
-        type: req.body.type,
-        label: req.body.label,
-        options: req.body.options
-    });
-    field.save().then(result => {
-        res.status(201).json({
-            type: result.type,
-            label: result.label,
-            options: result.options
+        const newPayment = await Receipt.create({
+            date: date.toISOString().split('.')[0],
+            details: fields,
+            amount: amount
         });
-    }).catch(err => {
-        res.status(400).json(errorRes(Number(err.message.substring(err.message.length - 1))));
-    })
-}
-
-const sendCategoryRequest = (req, res) => {
-    const category = new Category({
-        name: req.body.name,
-        providers: req.body.providers
-    });
-    category.save().then(result => {
-        res.status(201).json({
-            name: result.name,
-            providers: result.providers
-        });
-    }).catch(err => {
-        res.status(400).json(errorRes(Number(err.message.substring(err.message.length - 1))));
-    })
-}
-
-const sendProviderRequest = (req, res) => {
-    const provider = new Provider({
-        name: req.body.name,
-        fields: req.body.fields
-    });
-    provider.save().then(result => {
-        res.status(201).json({
-            name: result.name,
-            fields: result.fields
-        });
-    }).catch(err => {
-        // console.log(err);
-        res.json(err);
-    })
-}
-
-exports.makeNewPayment = (req, res, next) => {
-    // sendPairRequest(req, res);
-    // senFieldRequest(req, res);
-    // sendProviderRequest(req, res);
-    sendCategoryRequest(req, res);
+        const result = await newPayment.save();
+        res.status(200).json(result);
+    } catch (e) {
+        errorRes(res, e);
+    }
 }

@@ -5,11 +5,12 @@ const receiptSchema = new Schema({
     date: {
         type: Date,
         required: true,
+        default: new Date().toISOString().split('.')[0]
     },
     details: [
         {
-            type: Schema.Types.ObjectId,
-            ref: 'Pair'
+            k: Schema.Types.Mixed,
+            v: Schema.Types.Mixed
         }
     ],
     amount: {
