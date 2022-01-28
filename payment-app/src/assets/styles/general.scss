@@ -1,0 +1,75 @@
+@import "colors";
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-start {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.flex-end {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.gap-20 {
+  gap: 20px;
+}
+
+.gap-8 {
+  gap: 8px;
+}
+
+.btn-outline-secondary path {
+  fill: #6c757d;
+  transition: fill .15s ease-in-out;
+}
+
+.btn-outline-secondary:hover path {
+  fill: white;
+  transition: fill .15s ease-in-out;
+}
+
+.page-area {
+  height: calc(100vh - 93px);
+  width: 100%;
+}
+
+.card {
+  max-width: 800px;
+  border: 1px solid $strike-color;
+  border-radius: 4px;
+  height: 80%;
+  width: 100%;
+  margin: 16px;
+  padding: 16px;
+}
+
+.width-100 {
+  width: 100%;
+}
+
+.custom-btn {
+  height: 55px;
+}

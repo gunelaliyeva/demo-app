@@ -1,0 +1,13 @@
+@import "src/assets/styles/colors";
+
+.category-item {
+  width: 100%;
+  border-radius: 4px;
+  border: 1px solid $primary-color;
+  height: 100px;
+  font-size: 40px;
+  line-height: 50px;
+  font-weight: 700;
+  color: $secondary-color;
+  text-decoration: none;
+}
