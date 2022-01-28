@@ -1,23 +1,29 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const {PairSchema, PairModel} = require('./pair');
+let typeVal;
 
 const customFieldSchema = new Schema({
     type: {
         type: Number,
-        required: true
+        required: true,
+        validate: [val => {
+            typeVal = val;
+            return true;
+        }]
     },
     label: {
         type: String,
-        required: true
+        required: true,
     },
-    options: [
-        {
-            type: Schema.Types.ObjectId,
-            ref: 'PairModel'
-        }
-    ],
+    options:  [
+            {
+                "k": Schema.Types.Mixed,
+                "v": Schema.Types.Mixed
+            }
+        ],
 });
+customFieldSchema.path('options').validate(val => {
+    return Number(typeVal) === 4 ? val.length > 0 : true}, '2');
 
-module.exports = mongoose.model('CustomFieldModel', customFieldSchema);
+module.exports = mongoose.model("CustomField", customFieldSchema);
