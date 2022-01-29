@@ -65,7 +65,7 @@ const PaymentFormScreen = () => {
                 '+994' + fieldValues.prefix.v.substring(1, 3) + fieldValues.subscriberNumber :
                 fieldValues.subscriberNumber;
 
-            const result = await axios.post('http://localhost:8080/payment/new', {
+            const result = await axios.post(process.env.REACT_APP_URL + '/new', {
                 providerId: providerId,
                 fields: [
                     {

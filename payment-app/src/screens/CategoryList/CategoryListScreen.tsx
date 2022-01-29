@@ -12,7 +12,7 @@ const CategoryListScreen = () => {
     useEffect(() => {
         const getCategories = async () => {
             try {
-                const getReq = await axios.get('http://localhost:8080/payment/categories', );
+                const getReq = await axios.get(process.env.REACT_APP_URL + '/categories', );
                 setCategories(getReq.data);
                 localStorage.setItem('categories', JSON.stringify(getReq.data));
             } catch (err: any) {
