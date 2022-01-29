@@ -27,7 +27,7 @@ mongoose
         `mongodb+srv://${process.env.USER_NAME}:${process.env.USER_PASSWORD}@cluster0.z9pbo.mongodb.net/payment-app?retryWrites=true&w=majority`
     )
     .then(() => {
-        app.listen(8080);
+        app.listen(process.env.PORT || 8080);
     })
     .catch(err => {
         console.log(err);
