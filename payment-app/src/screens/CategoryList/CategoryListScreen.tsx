@@ -4,22 +4,19 @@ import {Link} from "react-router-dom";
 import './CategoryList.scss';
 import {RouterPathEnum} from "../../enums/RouterPathEnum";
 import CategoryListButton from "../../components/CategoryListButton";
+import {CategoryModel} from "../../models/models";
 
 const CategoryListScreen = () => {
-    const [categories, setCategories] = useState([]);
+    const [categories, setCategories] = useState<CategoryModel[]>([]);
 
     useEffect(() => {
         const getCategories = async () => {
             try {
-                const getReq = await axios.get('http://localhost:8080/payment/categories', {
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                });
+                const getReq = await axios.get('http://localhost:8080/payment/categories', );
                 setCategories(getReq.data);
                 localStorage.setItem('categories', JSON.stringify(getReq.data));
-            } catch (e) {
-                console.log(e);
+            } catch (err: any) {
+                alert(err.response.data.error.message);
             }
         }
 

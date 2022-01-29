@@ -2,14 +2,16 @@ import React, {useEffect, useState} from 'react';
 import {Link, useParams} from "react-router-dom";
 import {RouterPathEnum} from "../../enums/RouterPathEnum";
 import CategoryListButton from "../../components/CategoryListButton";
+import {CategoryModel, ProviderModel} from "../../models/models";
 
 const ServiceProviderListScreen = () => {
     let {categoryId} = useParams();
-    const [providers, setProviders] = useState([]);
+    const [providers, setProviders] = useState<ProviderModel[]>([]);
 
     useEffect(() => {
-        setProviders([...JSON.parse(localStorage.getItem('categories') as string)]
-            .find(category => category["_id"] === categoryId).providers);
+        const categories:CategoryModel[] = [...JSON.parse(localStorage.getItem('categories') as string)];
+        // @ts-ignore
+        setProviders(categories?.find(category => category._id === categoryId).providers);
     }, []);
 
     return (

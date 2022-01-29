@@ -1,19 +1,22 @@
 import React, {useEffect, useState} from 'react';
 
 import {InputGroup, Dropdown, DropdownButton, Button, Form} from "react-bootstrap";
-import './Paymentform.scss';
-import CategoryListButton from "../../components/CategoryListButton";
-import {useParams} from "react-router-dom";
+import {useParams, useNavigate} from "react-router-dom";
 import axios from "axios";
+
+import {CategoryModel, CustomFieldModel, ProviderModel} from "../../models/models";
+import CategoryListButton from "../../components/CategoryListButton";
+import './Paymentform.scss';
+import {RouterPathEnum} from "../../enums/RouterPathEnum";
 
 const PaymentFormScreen = () => {
     let {categoryId, providerId} = useParams();
+    let navigate = useNavigate();
+
     let currencyArray = ['AZN', 'USD', 'TL', 'RUB'];
-    const [selectedCategory, setSelectCategory] = useState();
-    const [categories, setCategories] = useState<any[]>([]);
-    const [providers, setProviders] = useState<any[]>([]);
-    const [fields, setFields] = useState<any[]>([]);
-    const [options, setOptions] = useState<any[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string>();
+    const [fields, setFields] = useState<CustomFieldModel[]>([]);
+    const [selectedProvider, setSelectedProvider] = useState<ProviderModel>();
     const [fieldValues, setFieldValues] = useState({
         subscriberNumber: '',
         prefix: {
@@ -29,43 +32,24 @@ const PaymentFormScreen = () => {
     })
 
     useEffect(() => {
-        const res = JSON.parse(localStorage.getItem('categories') as string);
-        if (res) setCategories(res);
+        const res: CategoryModel[] = JSON.parse(localStorage.getItem('categories') as string);
+        if (res) {
+            const selectedCat: CategoryModel | undefined = res.find(category => category._id === categoryId);
+            setSelectedProvider(selectedCat?.providers?.find(provider => provider._id === providerId));
+            setSelectedCategory(selectedCat?.name);
+        }
     }, []);
 
     useEffect(() => {
-        const res = categories.find(category => category["_id"] === categoryId);
-        if (res) {
-            setProviders(res.providers);
-            setSelectCategory(res.name);
-            // console.log(selectedCategory === "Mobile");
+        if (selectedProvider) {
+            setFields(selectedProvider.fields);
+            setPrefixHandler(selectedProvider.fields[0].options[0]);
         }
-        // setFields([...[...categories].find(category => category["_id"] === categoryId)
-        //     .providers].find(provider => provider["_id"] === providerId).fields);
-    }, [categories]);
+    }, [selectedProvider]);
 
-    useEffect(() => {
-        const res = providers.find(provider => provider["_id"] === providerId);
-        if (res) setFields(res["fields"]);
-    }, [providers]);
-
-    useEffect(() => {
-        setOptions(fields[0]?.options);
-    }, [fields]);
-
-    useEffect(() => {
-
-        if (options) {
-            if (options[0]) {
-                setPrefixHandler(options[0]);
-                // console.log(options[0].v);
-            }
-        }
-    }, [options]);
 
     const setPrefixHandler = (val: { k: string, v: string }) => {
         fieldValuesHandler("prefix", val);
-
     }
 
     const fieldValuesHandler = (name: string, val: string | { k: string, v: string }) => {
@@ -75,19 +59,41 @@ const PaymentFormScreen = () => {
         });
     }
 
-    const payHandler = () => {
-        console.log(fieldValues);
-        axios.post('http://localhost:8080/payment/new', {
-            details: [],
-            amount: {
-                value: fieldValues.amount,
-                currency: fieldValues.currency
-            }
-        }, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
+    const payHandler = async () => {
+        try {
+            const subscriber = selectedCategory === "Mobile" ?
+                '+994' + fieldValues.prefix.v.substring(1, 3) + fieldValues.subscriberNumber :
+                fieldValues.subscriberNumber;
+
+            const result = await axios.post('http://localhost:8080/payment/new', {
+                providerId: providerId,
+                fields: [
+                    {
+                        k: "Service",
+                        v: selectedProvider?.name
+                    },
+                    {
+                        k: "Subscriber",
+                        v: subscriber
+                    }
+                ],
+                amount: {
+                    value: fieldValues.amount,
+                    currency: fieldValues.currency
+                },
+                card: {
+                    number: fieldValues.cardNumber,
+                    exp_month: fieldValues.expMonth,
+                    exp_year: fieldValues.expYear,
+                    cvv: fieldValues.cvv
+                }
+            });
+            sessionStorage.setItem('payment', JSON.stringify(result.data));
+            navigate(RouterPathEnum.Result, { replace: true });
+        } catch (err: any) {
+            //for some reason Bootstrap Modal throws error
+            alert(err.response.data.error.message);
+        }
     }
 
     return (
@@ -105,10 +111,10 @@ const PaymentFormScreen = () => {
                                         id="input-group-dropdown-1"
                                     >
                                         {
-                                            options?.map(option => {
+                                            fields[0]?.options?.map(option => {
                                                 return <Dropdown.Item
                                                     onClick={() => setPrefixHandler(option)}
-                                                    key={option["_id"]}>{option.v}</Dropdown.Item>
+                                                    key={option._id}>{option.v}</Dropdown.Item>
                                             })
                                         }
                                     </DropdownButton>

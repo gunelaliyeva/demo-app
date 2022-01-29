@@ -24,6 +24,10 @@
   align-items: start;
 }
 
+.align-center {
+  align-items: center;
+}
+
 .flex-column {
   display: flex;
   flex-direction: column;
@@ -72,4 +76,8 @@
 
 .custom-btn {
   height: 55px;
+}
+
+span {
+  font-weight: bold;
 }
