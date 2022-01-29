@@ -1,12 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 
 const paymentRoutes = require('./routes/payment');
 
 const app = express();
 
 app.use(bodyParser.json());
+dotenv.config();
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,19 +22,13 @@ app.use((req, res, next) => {
 
 app.use('/payment', paymentRoutes);
 
-// app.use((error, req, res, next) => {
-//     console.log(error);
-//     const status = error.statusCode || 500;
-//     const message = error.message;
-//     const data = error.data;
-//     res.status(status).json({ message: message, data: data });
-// });
-
 mongoose
     .connect(
-        'mongodb+srv://admin:admin@cluster0.z9pbo.mongodb.net/payment-app?retryWrites=true&w=majority'
+        `mongodb+srv://${process.env.USER_NAME}:${process.env.USER_PASSWORD}@cluster0.z9pbo.mongodb.net/payment-app?retryWrites=true&w=majority`
     )
     .then(() => {
         app.listen(8080);
     })
-    .catch(err => console.log(err));
+    .catch(err => {
+        console.log(err);
+    });

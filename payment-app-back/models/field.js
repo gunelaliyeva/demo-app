@@ -4,7 +4,6 @@ const Schema = mongoose.Schema;
 let typeVal;
 
 const customFieldSchema = new Schema({
-    id: Schema.Types.ObjectId,
     type: {
         type: Number,
         required: true,
@@ -17,16 +16,17 @@ const customFieldSchema = new Schema({
         type: String,
         required: true,
     },
-    options:  [
+    options:  {
+        type: [
             {
                 "k": Schema.Types.Mixed,
                 "v": Schema.Types.Mixed
             }
-        ],
+        ]
+    },
 });
+
 customFieldSchema.path('options').validate(val => {
     return Number(typeVal) === 4 ? val.length > 0 : true}, '2');
 
-model = mongoose.model("CustomField", customFieldSchema);
-
-module.exports = model;
+module.exports = mongoose.model("CustomField", customFieldSchema);

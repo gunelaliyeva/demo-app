@@ -3,6 +3,7 @@ const express = require('express');
 const Category = require('../models/category');
 const Receipt = require('../models/receipt');
 const Provider = require('../models/provider');
+const CustomField = require('../models/field');
 
 const validationErrorTemp = {name: "ValidationError"};
 const date = new Date();
@@ -24,40 +25,39 @@ const errorRes = (res, err) => {
     });
 }
 
-const validateAmount = (amount, res) => {
+const validateAmount = (amount) => {
     const {value, currency} = amount;
     const numVal = Number(value);
-    if (isNaN(value) || numVal < 1 || numVal > 5000) errorRes(res, validationErrorTemp);
+    return (isNaN(value) || numVal < 1 || numVal > 5000);
+
 }
 
 const validateProvider = async (pId, res) => {
     try {
         const provider = await Provider.findById(pId);
-        if(!provider) errorRes(res, validationErrorTemp);
+        return !provider;
     } catch (e) {
         errorRes(res, validationErrorTemp);
     }
 }
 
-const validateCardNumber = (number) => number.length !== 20 || isNaN(number);
+const validateCardNumber = (number) => (number.length !== 20 || isNaN(number));
 
-const validateExpMonth = (month) => month.length !== 2 || isNaN(month) || month < 1 || month > 12;
+const validateExpMonth = (month) => (month.length !== 2 || isNaN(month) || month < 1 || month > 12);
 
-const validateExpYear = (year) => year.length !== 2 || isNaN(year) || year > 30 || year < date.getFullYear()%100;
+const validateExpYear = (year) => (year.length !== 2 || isNaN(year) || year > 30 || year < date.getFullYear()%100);
 
-const validateCvv = (cvv) => cvv.length !== 3 || isNaN(cvv);
+const validateCvv = (cvv) => (cvv.length !== 3 || isNaN(cvv));
 
-const validateCard = async (card, res) => {
+const validateCard = (card) => {
     const {number, exp_month, exp_year, cvv} = card;
-    if (validateCardNumber(number) || validateExpMonth(exp_month) || validateExpYear(exp_year) || validateCvv(cvv))
-        errorRes(res, validationErrorTemp);
+    return (validateCardNumber(number) || validateExpMonth(exp_month) || validateExpYear(exp_year) || validateCvv(cvv));
 }
 
 exports.getPaymentCategories = async (req, res, next) => {
     try {
         const categories = await Category.find().populate({
             path: 'providers',
-            select: 'name fields',
             populate: {
                 path: 'fields',
                 populate: {path: 'options'}
@@ -65,6 +65,7 @@ exports.getPaymentCategories = async (req, res, next) => {
         });
         res.status(200).json(categories);
     } catch (e) {
+        console.log(e)
         errorRes(res, e);
     }
 }
@@ -72,9 +73,10 @@ exports.getPaymentCategories = async (req, res, next) => {
 exports.makeNewPayment = async (req, res, next) => {
     try {
         const {providerId, fields, amount, card} = req.body;
-        validateAmount(amount, res);
-        validateProvider(providerId, res);
-        validateCard(card, res);
+        if(validateAmount(amount)|| validateCard(card) || await validateProvider(providerId)) {
+            errorRes(res, validationErrorTemp);
+           return;
+        }
 
         const newPayment = await Receipt.create({
             date: date.toISOString().split('.')[0],
